@@ -27,7 +27,7 @@ macro_rules! impl_value_try_from {
                 }
             }
         }
-    }
+    };
 }
 
 impl_value_try_from!(Value::Bool, bool);

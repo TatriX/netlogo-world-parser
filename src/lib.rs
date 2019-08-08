@@ -24,6 +24,7 @@ pub struct NetLogoWorld {
     pub output: Vec<String>,
     pub turtles: Vec<Turle>,
     pub patches: Vec<Patch>,
+    pub links: Vec<String>,
     /// Unimplemented ;(
     pub plots: (),
 }
@@ -78,6 +79,7 @@ pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
     let mut rdr = csv::ReaderBuilder::new()
         .flexible(true)
         .from_reader(data.as_bytes());
+
     for record in rdr.records().map(|record| record.expect("parse error")) {
         // First check if we are looking on a new section
         if let Ok(new_section) = record.deserialize::<Section>(None) {
@@ -93,6 +95,9 @@ pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
         }
 
         match section {
+            Section::RandomState => {
+                world.random_state = record.deserialize(headers.as_ref())?;
+            }
             Section::Globals => {
                 world.globals = record.deserialize(headers.as_ref())?;
             }
@@ -102,10 +107,17 @@ pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
             Section::Output => {
                 world.output.push(record.deserialize(headers.as_ref())?);
             }
-            _ => {}
+            Section::Patches => {
+                world.patches.push(record.deserialize(headers.as_ref())?);
+            }
+            Section::Links => {
+                world.links.push(record.deserialize(headers.as_ref())?);
+            }
+            _ => {
+                // skip the rest for now
+            }
         }
     }
-    println!("WORLD: {:?}", &world);
     Ok(world)
 }
 
@@ -127,6 +139,7 @@ enum Section {
 }
 
 impl Section {
+    /// Whether we expect a header after a section name.
     fn has_headers(&self) -> bool {
         match self {
             Section::Header | Section::Output | Section::Plots | Section::Extenstions => false,
