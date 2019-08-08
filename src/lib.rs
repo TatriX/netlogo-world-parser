@@ -12,6 +12,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
+use std::io::Read;
 
 mod value;
 use value::Value;
@@ -30,7 +31,12 @@ pub struct NetLogoWorld {
 }
 
 #[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
 pub struct Globals {
+    pub min_pxcor: i64,
+    pub max_pxcor: i64,
+    pub min_pycor: i64,
+    pub max_pycor: i64,
     pub ticks: usize,
     #[serde(flatten)]
     custom: HashMap<String, Value>,
@@ -71,14 +77,20 @@ pub struct Link {
     custom: HashMap<String, Value>,
 }
 
-pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
+/// Parse NetLogo world from a str.
+pub fn parse_str(data: &str) ->  Result<NetLogoWorld, Box<dyn Error>> {
+    parse(data.as_bytes())
+}
+
+/// Parse NetLogo world from a reader.
+pub fn parse(reader: impl Read) -> Result<NetLogoWorld, Box<dyn Error>> {
     let mut headers = None;
     let mut section = Section::Header;
     let mut world = NetLogoWorld::default();
 
     let mut rdr = csv::ReaderBuilder::new()
         .flexible(true)
-        .from_reader(data.as_bytes());
+        .from_reader(reader);
 
     for record in rdr.records().map(|record| record.expect("parse error")) {
         // First check if we are looking on a new section

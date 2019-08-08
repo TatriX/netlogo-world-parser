@@ -1,10 +1,10 @@
-use netlogo_world_parser::parse;
+use netlogo_world_parser::parse_str;
 use std::convert::{TryFrom, TryInto};
 
 #[test]
 fn parse_valid_file() {
     let data = include_str!("../tests/ants.dat");
-    let world = parse(data).expect("parse failed");
+    let world = parse_str(data).expect("parse failed");
     assert_eq!(world.turtles.len(), 6);
 
     let population = world
