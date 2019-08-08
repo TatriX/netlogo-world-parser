@@ -48,13 +48,27 @@ impl Globals {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Turle {}
+#[serde(rename_all = "kebab-case")]
+pub struct Turle {
+    who: usize,
+    color: usize,
+    xcor: i64,
+    ycor: i64,
+    #[serde(flatten)]
+    custom: HashMap<String, Value>,
+}
 
 #[derive(Debug, Deserialize)]
-pub struct Patch {}
+pub struct Patch {
+    #[serde(flatten)]
+    custom: HashMap<String, Value>,
+}
 
 #[derive(Debug, Deserialize)]
-pub struct Link {}
+pub struct Link {
+    #[serde(flatten)]
+    custom: HashMap<String, Value>,
+}
 
 pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
     let mut headers = None;
