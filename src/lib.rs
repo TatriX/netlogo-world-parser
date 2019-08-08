@@ -9,9 +9,12 @@
 //! To parse the file, we fully read it to memory, split to sections
 //! and then parse each section using csv.
 
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
-use serde::Deserialize;
+
+mod value;
+use value::Value;
 
 /// Representation of a NetLogo World.
 #[derive(Debug, Deserialize, Default)]
@@ -27,46 +30,45 @@ pub struct NetLogoWorld {
 
 #[derive(Debug, Deserialize, Default)]
 pub struct Globals {
-    ticks: usize,
+    pub ticks: usize,
     #[serde(flatten)]
-    custom: HashMap<String, Value>, // TODO: can be any type
+    custom: HashMap<String, Value>,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-enum Value {
-    Bool(bool),
-    U64(u64),
-    I64(i64),
-    Float(f64),
-    String(String),
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Turle {
+impl Globals {
+    /// Get custom field if any.
+    ///
+    /// Can be used like this:
+    /// ```
+    /// u64::try_from(world.globals.get("foo").expect("no foo").to_owned())
+    /// ```
+    pub fn get(&self, key: &str) -> Option<&Value> {
+        self.custom.get(key)
+    }
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Patch {
-}
+pub struct Turle {}
 
 #[derive(Debug, Deserialize)]
-pub struct Link {
-}
+pub struct Patch {}
+
+#[derive(Debug, Deserialize)]
+pub struct Link {}
 
 pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
     let mut headers = None;
     let mut section = Section::Header;
     let mut world = NetLogoWorld::default();
 
-    let mut rdr = csv::ReaderBuilder::new().flexible(true).from_reader(data.as_bytes());
+    let mut rdr = csv::ReaderBuilder::new()
+        .flexible(true)
+        .from_reader(data.as_bytes());
     for record in rdr.records().map(|record| record.expect("parse error")) {
         // First check if we are looking on a new section
         if let Ok(new_section) = record.deserialize::<Section>(None) {
             section = new_section;
             headers = None; // reset header
-            println!("Entering {:?} section", section);
             continue;
         }
 
@@ -79,14 +81,14 @@ pub fn parse(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
         match section {
             Section::Globals => {
                 world.globals = record.deserialize(headers.as_ref())?;
-            },
+            }
             Section::Turtles => {
                 world.turtles.push(record.deserialize(headers.as_ref())?);
-            },
+            }
             Section::Output => {
                 world.output.push(record.deserialize(headers.as_ref())?);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     println!("WORLD: {:?}", &world);
@@ -114,21 +116,7 @@ impl Section {
     fn has_headers(&self) -> bool {
         match self {
             Section::Header | Section::Output | Section::Plots | Section::Extenstions => false,
-            _ => true
+            _ => true,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let data = include_str!("../tests/ants.dat");
-        let world = parse(data).expect("parse failed");
-        assert_eq!(world.turtles.len(), 6);
-        assert_eq!(world.globals.custom.get("population").expect("no population"), &Value::U64(6));
-        assert!(world.output[0].contains("Setup complete"));
     }
 }

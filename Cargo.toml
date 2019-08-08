@@ -1,5 +1,5 @@
 [package]
-name = "netlogo-parser"
+name = "netlogo-world-parser"
 version = "0.1.0"
 authors = ["TatriX <tatrics@gmail.com>"]
 edition = "2018"
