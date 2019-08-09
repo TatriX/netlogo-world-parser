@@ -78,7 +78,7 @@ pub struct Link {
 }
 
 /// Parse NetLogo world from a str.
-pub fn parse_str(data: &str) ->  Result<NetLogoWorld, Box<dyn Error>> {
+pub fn parse_str(data: &str) -> Result<NetLogoWorld, Box<dyn Error>> {
     parse(data.as_bytes())
 }
 
@@ -88,9 +88,7 @@ pub fn parse(reader: impl Read) -> Result<NetLogoWorld, Box<dyn Error>> {
     let mut section = Section::Header;
     let mut world = NetLogoWorld::default();
 
-    let mut rdr = csv::ReaderBuilder::new()
-        .flexible(true)
-        .from_reader(reader);
+    let mut rdr = csv::ReaderBuilder::new().flexible(true).from_reader(reader);
 
     for record in rdr.records().map(|record| record.expect("parse error")) {
         // First check if we are looking on a new section
@@ -117,7 +115,7 @@ pub fn parse(reader: impl Read) -> Result<NetLogoWorld, Box<dyn Error>> {
                 world.turtles.push(record.deserialize(headers.as_ref())?);
             }
             Section::Output => {
-                world.output.push(record.deserialize(headers.as_ref())?);
+                world.output = parse_output(record.deserialize(headers.as_ref())?);
             }
             Section::Patches => {
                 world.patches.push(record.deserialize(headers.as_ref())?);
@@ -158,4 +156,17 @@ impl Section {
             _ => true,
         }
     }
+}
+
+// TODO: write tests
+/// Parse "OUTPUT" section.
+///
+/// Remove surrounding double quotes and split the string on escaped
+/// newlines.
+fn parse_output(output: &str) -> Vec<String> {
+    output
+        .trim_matches('"')
+        .split("\\n")
+        .map(String::from)
+        .collect()
 }
