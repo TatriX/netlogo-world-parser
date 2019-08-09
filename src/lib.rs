@@ -4,10 +4,20 @@
 //! or produced by `export-world` function.
 //!
 //! ## Implementation details
-//! NetLogo `.dat` files have header and several sections.
+//! NetLogo `.dat` files have a header and several sections.  Every
+//! section has a heading with a name of a section and optionally a
+//! header csv row followed by the csv data.
 //!
-//! To parse the file, we fully read it to memory, split to sections
-//! and then parse each section using csv.
+//! ### Parsing
+//! The data is parsed as `csv` and interpreted at the same time line
+//! by line. After finding a header the section is read. If a section
+//! is expected to have a header, it's read first.
+//!
+//! ### Parsed data format
+//! Data is typed and uses `custom` hashmap for added properties.
+//!
+//! TODO: Consider saving "raw" csv data such that a user could
+//! deserialize it to his own data structure.
 
 use serde::Deserialize;
 use std::collections::HashMap;
