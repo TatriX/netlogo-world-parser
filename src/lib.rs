@@ -20,12 +20,14 @@
 //! deserialize it to his own data structure.
 
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::error::Error;
 use std::io::Read;
 
 mod value;
+#[cfg(feature = "custom-fields")]
 use value::Value;
+#[cfg(feature = "custom-fields")]
+use std::collections::HashMap;
 
 /// Representation of a NetLogo World.
 #[derive(Debug, Deserialize, Default)]
@@ -48,6 +50,7 @@ pub struct Globals {
     pub min_pycor: i64,
     pub max_pycor: i64,
     pub ticks: usize,
+    #[cfg(feature = "custom-fields")]
     #[serde(flatten)]
     custom: HashMap<String, Value>,
 }
@@ -59,6 +62,7 @@ impl Globals {
     /// ```
     /// u64::try_from(world.globals.get("foo").expect("no foo").to_owned())
     /// ```
+    #[cfg(feature = "custom-fields")]
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.custom.get(key)
     }
@@ -71,18 +75,21 @@ pub struct Turle {
     color: usize,
     xcor: i64,
     ycor: i64,
+    #[cfg(feature = "custom-fields")]
     #[serde(flatten)]
     custom: HashMap<String, Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Patch {
+    #[cfg(feature = "custom-fields")]
     #[serde(flatten)]
     custom: HashMap<String, Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Link {
+    #[cfg(feature = "custom-fields")]
     #[serde(flatten)]
     custom: HashMap<String, Value>,
 }
